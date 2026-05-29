@@ -8,7 +8,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
 
 @Controller
 @RequestMapping("/products")
@@ -52,9 +56,37 @@ public class ProductController {
         return "products/add";
     }
 
+    @GetMapping("/{id}/edit")
+    public String editProductForm(@PathVariable Long id, Model model) {
+        Product product = productService.findById(id);
+        ProductDto productDto = new ProductDto();
+        productDto.setName(product.getName());
+        productDto.setPrice(product.getPrice());
+        productDto.setStock(product.getStock());
+        productDto.setDescription(product.getDescription());
+        model.addAttribute("productDto", productDto);
+        model.addAttribute("productId", id);
+        return "products/edit";
+    }
+
     @PostMapping
     public String save(@ModelAttribute ProductDto dto) {
         productService.save(dto);
+        return "redirect:/products";
+    }
+
+    @PostMapping("/{id}/edit")
+    public String editProduct(@PathVariable Long id,
+                              @Valid @ModelAttribute ProductDto productDto,
+                              BindingResult bindingResult,
+                              Model model,
+                              RedirectAttributes redirectAttributes) {
+        if(bindingResult.hasErrors()) {
+            model.addAttribute("productId", id);
+            return "products/edit";
+        }
+        productService.updateProduct(id, productDto);
+        redirectAttributes.addAttribute("successMessage", "상품이 수정되었습니다.");
         return "redirect:/products";
     }
 
